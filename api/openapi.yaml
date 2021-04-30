@@ -1,0 +1,637 @@
+openapi: 3.0.1
+info:
+  title: 刑事局調閱平台
+  description: 自動調閱 API
+  version: 1.0.0
+servers:
+- url: http://ntpc.ns-guard.com/
+paths:
+  /warrants:
+    get:
+      summary: 查詢調閱單
+      operationId: warrantsGET
+      parameters:
+      - name: startTime
+        in: query
+        description: 查詢開始時間
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: date-time
+          example: 2021-08-09T15:30:10.151Z
+      - name: endTime
+        in: query
+        description: 查詢開始時間
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: date-time
+          example: 2021-08-09T15:30:10.151Z
+      responses:
+        "200":
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Warrant'
+        "400":
+          description: 查詢條件不合法
+          content: {}
+        "401":
+          description: 認證錯誤
+          headers:
+            WWW_Authenticate:
+              style: simple
+              explode: false
+              schema:
+                type: string
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: Default
+  /warrants/{warrantId}/results:
+    post:
+      summary: 上傳調閱結果
+      operationId: warrantsWarrantIdResultsPOST
+      parameters:
+      - name: warrantId
+        in: path
+        description: 調閱單編號
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          description: 調閱單編號
+      requestBody:
+        description: 調閱結果
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarrantResult'
+      responses:
+        "201":
+          description: 新增成功
+          content: {}
+        "400":
+          description: 內容格式錯誤
+          content: {}
+        "401":
+          description: 認證錯誤
+          headers:
+            WWW_Authenticate:
+              style: simple
+              explode: false
+              schema:
+                type: string
+        "404":
+          description: 該編號找不到該調閱單
+          content: {}
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: Default
+components:
+  schemas:
+    Warrant:
+      required:
+      - endTime
+      - id
+      - objectType
+      - objectValue
+      - startTime
+      - types
+      type: object
+      properties:
+        id:
+          type: string
+          description: 調閱單編號
+          example: W1619622895
+        objectType:
+          type: string
+          description: 調閱條件類型
+          example: id
+          enum:
+          - id
+          - phoneNumber
+          - email
+          - ip
+          - account
+          - transactionId
+        objectValue:
+          type: string
+          description: 依照調閱類型填入相關內容，如：身份證字號、電話號碼等
+          example: A123456789
+        startTime:
+          type: string
+          description: 調閱起始時間，以 ISO-8601 之時間格式，時區 UTC，帶 Z 結尾表示
+          format: date-time
+          example: 2021-08-09T15:30:10.151Z
+        endTime:
+          type: string
+          description: 調閱結束時間，以 ISO-8601 之時間格式，時區 UTC，帶 Z 結尾表示
+          format: date-time
+          example: 2021-08-09T15:30:10.151Z
+        types:
+          type: string
+          description: 調閱結果類型
+          enum:
+          - profile
+          - phoneHistory
+          - emailHistory
+          - addressHistory
+          - bankAccountHistory
+          - creditCardHistory
+          - ipHistory
+          - transaction
+          - location
+          - chat
+      example:
+        types: profile
+        objectValue: A123456789
+        startTime: 2021-08-09T15:30:10.151Z
+        id: W1619622895
+        endTime: 2021-08-09T15:30:10.151Z
+        objectType: id
+    WarrantResult:
+      required:
+      - warrantId
+      type: object
+      properties:
+        warrantId:
+          type: string
+          description: 調閱單編號
+          example: W1619622895
+        profile:
+          type: array
+          description: 帳號資訊
+          items:
+            $ref: '#/components/schemas/Profile'
+        phoneHistory:
+          type: array
+          description: 電話號碼變更歷程
+          items:
+            $ref: '#/components/schemas/PhoneHistory'
+        emailHistory:
+          type: array
+          description: Email 變更歷程
+          items:
+            $ref: '#/components/schemas/EmailHistory'
+        addressHistory:
+          type: array
+          description: 地址變更歷程
+          items:
+            $ref: '#/components/schemas/AddressHistory'
+        bankAccountHistory:
+          type: array
+          description: 銀行帳戶變更歷程
+          items:
+            $ref: '#/components/schemas/BankAccountHistory'
+        creditCardHistory:
+          type: array
+          description: 信用卡變更歷程
+          items:
+            $ref: '#/components/schemas/CreditCardHistory'
+        ipHistory:
+          type: array
+          description: IP 使用歷程
+          items:
+            $ref: '#/components/schemas/IPHistory'
+        transaction:
+          type: array
+          description: 交易紀錄
+          items:
+            $ref: '#/components/schemas/Transaction'
+        location:
+          type: array
+          description: 座標位置變更紀錄
+          items:
+            $ref: '#/components/schemas/Location'
+        chat:
+          type: array
+          description: 聊天紀錄
+          items:
+            $ref: '#/components/schemas/Chat'
+    Profile:
+      type: object
+      properties:
+        account:
+          type: string
+          description: 帳號編碼
+          example: "104854847521"
+        accountName:
+          type: string
+          description: 帳號名稱
+          example: 阿明
+        id:
+          type: string
+          description: 身份證字號
+          example: A123456789
+        name:
+          type: string
+          description: 姓名
+          example: 王大明
+        birthday:
+          type: string
+          description: 生日
+          format: date
+          example: '1988-01-02'
+        gender:
+          type: string
+          description: "性別 (female: 女, male: 男, unknown: 未知)"
+          example: "male"
+          enum:
+          - male
+          - female
+          - unknown
+        email:
+          type: string
+          description: 電子郵件
+          example: ming@gmail.com
+        country:
+          type: string
+          description: 國別
+          example: 臺灣
+        city:
+          type: string
+          description: 縣市
+          example: 臺北市
+        address:
+          type: string
+          description: 完整地址
+          example: 臺北市瑞光路330號5樓
+        registeredIP:
+          type: string
+          description: 註冊 IP
+          example: 10.1.55.112
+        registeredTime:
+          type: string
+          description: 註冊時間
+          format: date-time
+        bankName:
+          type: string
+          description: 銀行帳戶之銀行名稱
+          example: 臺灣銀行
+        branchName:
+          type: string
+          description: 銀行帳戶之分行名稱
+          example: 城中分行
+        branchAccountNumber:
+          type: string
+          description: 銀行帳戶之帳戶號碼
+          example: "12233322457"
+        branchAccountName:
+          type: string
+          description: 銀行帳戶之帳戶名稱
+          example: 王大明
+        creditCardNumber:
+          type: string
+          description: 信用卡號
+          example: "4456778914563214"
+        note:
+          type: string
+          description: 備註
+          example: 其他備註
+      description: 帳號相關資訊
+    PhoneHistory:
+      type: object
+      properties:
+        account:
+          type: string
+          description: 帳號編碼
+          example: "104854847521"
+        time:
+          type: string
+          description: 使用時間
+          format: date-time
+          example: 2021-10-09T15:30:10.151Z
+        phone:
+          type: string
+          description: 電話號碼
+          example: "0912457897"
+        note:
+          type: string
+          description: 備註
+          example: 其他備註
+    EmailHistory:
+      type: object
+      properties:
+        account:
+          type: string
+          description: 帳號編碼
+          example: "104854847521"
+        time:
+          type: string
+          description: 使用時間
+          format: date-time
+          example: 2021-10-09T15:30:10.151Z
+        email:
+          type: string
+          description: 電子郵件
+          example: ming@gmail.com
+        note:
+          type: string
+          description: 備註
+          example: 其他備註
+    AddressHistory:
+      type: object
+      properties:
+        account:
+          type: string
+          description: 帳號編碼
+          example: "104854847521"
+        time:
+          type: string
+          description: 使用時間
+          format: date-time
+          example: 2021-10-09T15:30:10.151Z
+        country:
+          type: string
+          description: 國別
+          example: 臺灣
+        city:
+          type: string
+          description: 縣市
+          example: 臺北市
+        address:
+          type: string
+          description: 完整地址
+          example: 臺北市瑞光路330號5樓
+        note:
+          type: string
+          description: 備註
+          example: 其他備註
+    BankAccountHistory:
+      type: object
+      properties:
+        account:
+          type: string
+          description: 帳號編碼
+          example: "104854847521"
+        time:
+          type: string
+          description: 使用時間
+          format: date-time
+          example: 2021-10-09T15:30:10.151Z
+        bankName:
+          type: string
+          description: 銀行帳戶之銀行名稱
+          example: 臺灣銀行
+        branchName:
+          type: string
+          description: 銀行帳戶之分行名稱
+          example: 城中分行
+        branchAccountNumber:
+          type: string
+          description: 銀行帳戶之帳戶號碼
+          example: "12233322457"
+        branchAccountName:
+          type: string
+          description: 銀行帳戶之帳戶名稱
+          example: 王大明
+        note:
+          type: string
+          description: 備註
+          example: 其他備註
+    CreditCardHistory:
+      type: object
+      properties:
+        account:
+          type: string
+          description: 帳號編碼
+          example: "104854847521"
+        time:
+          type: string
+          description: 使用時間
+          format: date-time
+          example: 2021-10-09T15:30:10.151Z
+        creditCardNumber:
+          type: string
+          description: 信用卡號
+          example: "4456778914563214"
+        note:
+          type: string
+          description: 備註
+          example: 其他備註
+    IPHistory:
+      type: object
+      properties:
+        account:
+          type: string
+          description: 帳號編碼
+          example: "104854847521"
+        time:
+          type: string
+          description: 使用時間
+          format: date-time
+          example: 2021-10-09T15:30:10.151Z
+        ip:
+          type: string
+          description: 使用 IP
+          example: 10.1.55.141
+        port:
+          type: string
+          description: 使用 Port
+          example: "25"
+        type:
+          type: string
+          description: 使用行為類型，如：登入，交易
+          example: 登入
+        note:
+          type: string
+          description: 備註
+          example: 其他備註
+    Transaction:
+      type: object
+      properties:
+        account:
+          type: string
+          description: 帳號編碼
+          example: "104854847521"
+        time:
+          type: string
+          description: 使用時間
+          format: date-time
+          example: 2021-10-09T15:30:10.151Z
+        ip:
+          type: string
+          description: 使用 IP
+          example: 10.1.55.141
+        country:
+          type: string
+          description: 國別
+          example: 臺灣
+        city:
+          type: string
+          description: 縣市
+          example: 臺北市
+        address:
+          type: string
+          description: 完整地址
+          example: 臺北市瑞光路330號5樓
+        phoneNumber:
+          type: string
+          description: 電話號碼
+          example: "0911254876"
+        paymentType:
+          type: string
+          description: "交易方式 (creditCard: 信用卡, atm: ATM 轉帳, ibon: 7-11 ibon, fami:\
+            \ 全家 fami port, googlePay: Google Pay, linePay: Line Pay, jkoPay: 街口支付\
+            )"
+          example: creditCard
+          enum:
+          - creditCard
+          - atm
+          - ibon
+          - fami
+          - googlePay
+          - linePay
+          - jkoPay
+        paymentAccount:
+          type: string
+          description: 對應交易方式提供：信用卡號/銀行帳號/繳付序號/繳付序號/Google 帳號/Line 帳號/街口帳號
+          example: "4493771929901"
+        paymentAmount:
+          type: integer
+          description: 交易金額
+          example: 5000
+        paymentCurrency:
+          type: string
+          description: "交易幣別 (請參考: https://developers.google.com/adsense/host/appendix/currencies?hl=zh-tw)"
+          example: TWD
+        sellerAccount:
+          type: string
+          description: 賣家帳號編碼
+          example: "1048548545475"
+        sellerName:
+          type: string
+          description: 賣家名稱
+          example: 小米之家
+        orderId:
+          type: string
+          description: 訂單編號
+          example: "102214578"
+        orderStatus:
+          type: string
+          description: 訂單狀態
+          example: success
+          enum:
+          - success
+          - cancel
+          - failure
+        receiverCountry:
+          type: string
+          description: 收件者國別
+          example: 臺灣
+        receiverCity:
+          type: string
+          description: 收件者縣市
+          example: 臺北市
+        receiverAddress:
+          type: string
+          description: 收件者完整地址
+          example: 臺北市瑞光路330號5樓
+        productNumber:
+          type: string
+          description: 商品編號
+          example: "1157"
+        productInfo:
+          type: string
+          description: 商品資訊
+          example: 行動電源
+        note:
+          type: string
+          description: 備註
+          example: 其他備註
+    Location:
+      type: object
+      properties:
+        account:
+          type: string
+          description: 帳號編碼
+          example: "104854847521"
+        time:
+          type: string
+          description: 使用時間
+          format: date-time
+          example: 2021-10-09T15:30:10.151Z
+        latitude:
+          type: number
+          description: 經度
+          format: float
+          example: 25.545479
+        longitude:
+          type: number
+          description: 緯度
+          format: float
+          example: 121.456541
+        note:
+          type: string
+          description: 備註
+          example: 其他備註
+    Chat:
+      type: object
+      properties:
+        account:
+          type: string
+          description: 帳號編碼
+          example: "104854847521"
+        time:
+          type: string
+          description: 使用時間
+          format: date-time
+          example: 2021-10-09T15:30:10.151Z
+        chatId:
+          type: string
+          description: 聊天室編號
+          example: "1548135"
+        ip:
+          type: string
+          description: 使用 IP
+          example: 10.54.15.6
+        partyAccount:
+          type: string
+          description: 對象帳號
+          example: "10485878734521"
+        partyName:
+          type: string
+          description: 對象名稱
+          example: 小米之家
+        direction:
+          type: string
+          description: "通訊方向 (in: 收訊, out: 發訊)"
+          example: in
+          enum:
+          - in
+          - out
+        contentType:
+          type: string
+          description: "訊息類型 (text: 文字, call: 語音, sticker: 貼圖)"
+          example: text
+          enum:
+          - text
+          - call
+          - sticker
+        content:
+          type: string
+          description: 訊息內容
+          example: 請問有其他顏色嗎?
+        note:
+          type: string
+          description: 備註
+          example: 其他備註
+  responses:
+    UnauthorizedError:
+      description: 認證錯誤
+      headers:
+        WWW_Authenticate:
+          style: simple
+          explode: false
+          schema:
+            type: string
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
